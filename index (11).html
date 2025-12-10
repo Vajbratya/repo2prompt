@@ -1,0 +1,2188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>repo2prompt v5</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-2: #fafafa;
+      --bg-3: #f5f5f5;
+      --bg-4: #ebebeb;
+      --fg: #171717;
+      --fg-2: #525252;
+      --fg-3: #a3a3a3;
+      --border: #e5e5e5;
+      --border-2: #d4d4d4;
+      --accent: #404040;
+      --accent-2: #262626;
+      --green: #166534;
+      --green-bg: #dcfce7;
+      --yellow: #92400e;
+      --yellow-bg: #fef3c7;
+      --red: #991b1b;
+      --red-bg: #fee2e2;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--fg);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-2);
+      border-right: 1px solid var(--border);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      max-height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        position: relative;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+    }
+
+    .logo {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+
+    .logo-v { 
+      font-size: 10px;
+      color: var(--fg-3); 
+      font-weight: 400;
+      background: var(--bg-3);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .logo-badge {
+      font-size: 9px;
+      color: var(--fg-2);
+      background: var(--bg-3);
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-left: auto;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 4px; }
+
+    .label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--fg-2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .label-hint {
+      font-weight: 400;
+      color: var(--fg-3);
+      text-transform: none;
+    }
+
+    .input {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--fg);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .input::placeholder { color: var(--fg-3); }
+
+    .input-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .input-row .input { 
+      flex: 1; 
+      min-width: 0;
+    }
+
+    .btn {
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+      background: var(--bg);
+      color: var(--fg);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--bg-3);
+      border-color: var(--border-2);
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+    }
+
+    .btn-dark {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+
+    .btn-dark:hover:not(:disabled) {
+      background: var(--fg-2);
+      border-color: var(--fg-2);
+    }
+
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-full { width: 100%; }
+    .btn-icon { padding: 6px 8px; }
+
+    /* Quick presets */
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .preset {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 3px 7px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      color: var(--fg-2);
+      transition: all 0.1s;
+    }
+
+    .preset:hover {
+      background: var(--bg-3);
+      color: var(--fg);
+    }
+
+    /* History dropdown */
+    .history-wrap {
+      position: relative;
+    }
+
+    .history-btn {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .history-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 100;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .history-menu.visible { display: block; }
+
+    .history-item {
+      padding: 8px 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-item:last-child { border-bottom: none; }
+    .history-item:hover { background: var(--bg-2); }
+
+    .history-item-name { color: var(--fg); }
+    .history-item-time { color: var(--fg-3); font-size: 10px; }
+
+    .history-empty {
+      padding: 12px;
+      text-align: center;
+      color: var(--fg-3);
+      font-size: 11px;
+    }
+
+    /* Accordion */
+    .accordion {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg);
+    }
+
+    .accordion-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--fg-2);
+      user-select: none;
+    }
+
+    .accordion-head:hover { color: var(--fg); }
+
+    .accordion-head::after {
+      content: '+';
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg-3);
+    }
+
+    .accordion.open .accordion-head::after { content: '-'; }
+
+    .accordion-body {
+      display: none;
+      padding: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .accordion.open .accordion-body { display: block; }
+
+    .checks { display: flex; flex-direction: column; gap: 6px; }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--fg-2);
+      cursor: pointer;
+    }
+
+    .check:hover { color: var(--fg); }
+
+    .check input {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--accent);
+    }
+
+    /* Main area */
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+      background: var(--bg);
+    }
+
+    .toolbar.visible { display: flex; }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .repo-name {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--fg);
+    }
+
+    .repo-branch {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--fg-3);
+      background: var(--bg-3);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .stats { display: flex; gap: 16px; }
+
+    .stat {
+      font-size: 11px;
+      color: var(--fg-3);
+    }
+
+    .stat b {
+      font-family: var(--mono);
+      font-weight: 500;
+      color: var(--fg);
+    }
+
+    .stat b.warn { color: var(--yellow); }
+    .stat b.danger { color: var(--red); }
+
+    .tabs {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .tab {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--fg-3);
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .tab:last-child { border-right: none; }
+    .tab:hover { color: var(--fg); background: var(--bg-2); }
+    .tab.active { background: var(--fg); color: var(--bg); }
+
+    .output-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .output-scroll {
+      flex: 1;
+      overflow: auto;
+      display: none;
+    }
+
+    .output-scroll.visible { display: block; }
+
+    .output-pre {
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.6;
+      padding: 16px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--fg-2);
+      margin: 0;
+    }
+
+    /* Empty state */
+    .empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+    }
+
+    .empty-ascii {
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.3;
+      color: var(--fg-3);
+      margin-bottom: 24px;
+      white-space: pre;
+    }
+
+    .empty-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--fg);
+      margin-bottom: 6px;
+    }
+
+    .empty-desc {
+      font-size: 12px;
+      color: var(--fg-2);
+      max-width: 340px;
+      margin-bottom: 16px;
+    }
+
+    .empty-shortcuts {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--fg-3);
+    }
+
+    .empty-shortcut kbd {
+      font-family: var(--mono);
+      font-size: 10px;
+      background: var(--bg-3);
+      padding: 2px 5px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      position: absolute;
+      inset: 0;
+      background: rgba(64, 64, 64, 0.05);
+      border: 2px dashed var(--fg-3);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .drop-zone.visible { display: flex; }
+
+    .drop-zone-text {
+      font-size: 14px;
+      color: var(--fg-2);
+      font-weight: 500;
+    }
+
+    /* Analysis panel */
+    .analysis {
+      display: none;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-2);
+    }
+
+    .analysis.visible { display: block; }
+
+    .analysis-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .analysis-tab {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 4px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      color: var(--fg-2);
+    }
+
+    .analysis-tab:hover { color: var(--fg); }
+    .analysis-tab.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+    .analysis-content { display: none; }
+    .analysis-content.visible { display: block; }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .analysis-card {
+      padding: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .analysis-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--fg-3);
+    }
+
+    .analysis-value {
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--fg);
+    }
+
+    .analysis-value.ok { color: var(--green); }
+    .analysis-value.warn { color: var(--yellow); }
+    .analysis-value.bad { color: var(--red); }
+
+    .models-title {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--fg-3);
+      margin-bottom: 6px;
+    }
+
+    .models-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 4px;
+    }
+
+    .model-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: 11px;
+    }
+
+    .model-name { color: var(--fg-2); }
+    
+    .model-ctx {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--fg-3);
+    }
+
+    .model-tag { 
+      font-family: var(--mono); 
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    
+    .model-tag.ok { color: var(--green); background: var(--green-bg); }
+    .model-tag.warn { color: var(--yellow); background: var(--yellow-bg); }
+    .model-tag.bad { color: var(--red); background: var(--red-bg); }
+
+    /* File tree browser */
+    .file-tree {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg);
+    }
+
+    .file-tree-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .file-tree-item:last-child { border-bottom: none; }
+    .file-tree-item:hover { background: var(--bg-2); }
+
+    .file-tree-item input {
+      width: 12px;
+      height: 12px;
+      accent-color: var(--accent);
+    }
+
+    .file-tree-name { 
+      flex: 1; 
+      color: var(--fg-2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-tree-size {
+      color: var(--fg-3);
+      font-size: 10px;
+    }
+
+    .file-tree-actions {
+      display: flex;
+      gap: 4px;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+    }
+
+    /* Code stats */
+    .code-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 6px;
+    }
+
+    .code-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: 11px;
+    }
+
+    .code-stat-lang { color: var(--fg-2); }
+    .code-stat-count { font-family: var(--mono); color: var(--fg); font-weight: 500; }
+    .code-stat-bar {
+      height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin-top: 4px;
+    }
+
+    /* Loading overlay */
+    .loading {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.97);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .loading.visible { display: flex; }
+
+    .loading-ascii {
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.3;
+      color: var(--fg);
+      white-space: pre;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .loading-text {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg-2);
+    }
+
+    .loading-status {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--fg-3);
+      margin-top: 4px;
+    }
+
+    .loading-progress {
+      width: 200px;
+      height: 4px;
+      background: var(--bg-3);
+      border-radius: 2px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+
+    .loading-progress-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      padding: 10px 16px;
+      background: var(--fg);
+      color: var(--bg);
+      border-radius: 4px;
+      font-size: 12px;
+      transform: translateY(60px);
+      opacity: 0;
+      transition: all 0.2s;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast.visible { transform: translateY(0); opacity: 1; }
+
+    /* Error */
+    .error {
+      padding: 10px;
+      background: var(--red-bg);
+      border: 1px solid #fecaca;
+      border-radius: 4px;
+      color: var(--red);
+      font-size: 11px;
+      display: none;
+    }
+
+    .error.visible { display: block; }
+
+    .note {
+      font-size: 10px;
+      color: var(--fg-3);
+      padding: 8px 10px;
+      background: var(--bg-3);
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+
+    /* Share modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .modal-overlay.visible { display: flex; }
+
+    .modal {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .modal-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .modal-row .input { flex: 1; }
+
+    .modal-close {
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    /* Keyboard hints */
+    .kbd-hint {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      font-size: 10px;
+      color: var(--fg-3);
+      display: flex;
+      gap: 12px;
+    }
+
+    .kbd-hint kbd {
+      font-family: var(--mono);
+      background: var(--bg-3);
+      padding: 2px 5px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      margin-right: 4px;
+    }
+
+    @media (max-width: 900px) {
+      .kbd-hint { display: none; }
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        repo2prompt 
+        <span class="logo-v">v5</span>
+        <span class="logo-badge">PRO</span>
+      </div>
+      <a href="https://github.com/Vajbratya" target="_blank" style="font-size:10px;color:var(--fg-3);text-decoration:none;margin-top:-6px;">by vajbratya</a>
+
+      <div class="field">
+        <label class="label">Repository <span class="label-hint">(paste URL or owner/repo)</span></label>
+        <input type="text" id="repoInput" class="input" placeholder="facebook/react" autocomplete="off" autofocus>
+      </div>
+
+      <div class="presets" id="presets">
+        <span class="preset" data-repo="facebook/react">react</span>
+        <span class="preset" data-repo="vercel/next.js">next.js</span>
+        <span class="preset" data-repo="microsoft/vscode">vscode</span>
+        <span class="preset" data-repo="tailwindlabs/tailwindcss">tailwind</span>
+        <span class="preset" data-repo="anthropics/anthropic-sdk-python">anthropic</span>
+      </div>
+
+      <div class="input-row">
+        <input type="text" id="branchInput" class="input" placeholder="branch" autocomplete="off" style="flex:1;">
+        <input type="text" id="pathInput" class="input" placeholder="path" autocomplete="off" style="flex:1;">
+      </div>
+
+      <div class="history-wrap">
+        <button class="btn btn-full history-btn" id="historyBtn">
+          <span>Recent repos</span>
+          <span id="historyCount">(0)</span>
+        </button>
+        <div class="history-menu" id="historyMenu"></div>
+      </div>
+
+      <div class="accordion open">
+        <div class="accordion-head">Smart Filters</div>
+        <div class="accordion-body">
+          <div class="checks">
+            <label class="check"><input type="checkbox" id="fDeps" checked> Dependencies (node_modules, vendor)</label>
+            <label class="check"><input type="checkbox" id="fLock" checked> Lock files (package-lock, yarn.lock)</label>
+            <label class="check"><input type="checkbox" id="fBuild" checked> Build output (dist, .next, target)</label>
+            <label class="check"><input type="checkbox" id="fBinary" checked> Binary files (images, fonts, media)</label>
+            <label class="check"><input type="checkbox" id="fTests"> Test files (*.test.*, __tests__)</label>
+            <label class="check"><input type="checkbox" id="fDocs"> Documentation (*.md, /docs)</label>
+            <label class="check"><input type="checkbox" id="fGitignore" checked> Respect .gitignore</label>
+          </div>
+          <div class="field" style="margin-top:10px;">
+            <label class="label">Max file size (KB)</label>
+            <input type="number" id="maxKB" class="input" value="100" min="1" max="1000">
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label class="label">Custom exclude patterns</label>
+            <input type="text" id="customExclude" class="input" placeholder="*.min.js, /vendor/, secret*">
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label class="label">Include only (whitelist)</label>
+            <input type="text" id="customInclude" class="input" placeholder="*.ts, *.tsx, src/*">
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion">
+        <div class="accordion-head">Output Options</div>
+        <div class="accordion-body">
+          <div class="checks">
+            <label class="check"><input type="radio" name="fmt" value="xml" checked> XML (Claude optimized)</label>
+            <label class="check"><input type="radio" name="fmt" value="markdown"> Markdown (GPT, Gemini)</label>
+            <label class="check"><input type="radio" name="fmt" value="json"> JSON (structured)</label>
+            <label class="check"><input type="radio" name="fmt" value="llm"> LLM Prompt (ready to paste)</label>
+          </div>
+          <div class="checks" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+            <label class="check"><input type="checkbox" id="optTree" checked> Include file tree</label>
+            <label class="check"><input type="checkbox" id="optStats" checked> Include statistics</label>
+            <label class="check"><input type="checkbox" id="optCompress"> Compress whitespace</label>
+            <label class="check"><input type="checkbox" id="optLineNums"> Add line numbers</label>
+            <label class="check"><input type="checkbox" id="optChunked"> Chunked output (for long repos)</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion">
+        <div class="accordion-head">Advanced</div>
+        <div class="accordion-body">
+          <div class="field">
+            <label class="label">Max files to process</label>
+            <input type="number" id="maxFiles" class="input" value="200" min="10" max="500">
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label class="label">Target token limit</label>
+            <input type="number" id="targetTokens" class="input" value="0" min="0" placeholder="0 = no limit">
+          </div>
+          <div class="checks" style="margin-top:10px;">
+            <label class="check"><input type="checkbox" id="optPrioritize" checked> Prioritize important files</label>
+            <label class="check"><input type="checkbox" id="optDepGraph"> Include dependency graph</label>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="convertBtn">Convert Repository</button>
+
+      <div class="error" id="errorBox"></div>
+
+      <div class="note">
+        No API key needed. Direct fetch from raw.githubusercontent.com - unlimited requests.
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="toolbar" id="toolbar">
+        <div class="toolbar-left">
+          <span class="repo-name" id="repoName">-</span>
+          <span class="repo-branch" id="repoBranch">main</span>
+          <div class="stats" id="statsBar">
+            <span class="stat"><b id="sFiles">0</b> files</span>
+            <span class="stat"><b id="sChars">0</b> chars</span>
+            <span class="stat"><b id="sTokens">0</b> tokens</span>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <div class="tabs" id="formatTabs">
+            <button class="tab active" data-fmt="xml">XML</button>
+            <button class="tab" data-fmt="markdown">MD</button>
+            <button class="tab" data-fmt="json">JSON</button>
+            <button class="tab" data-fmt="llm">LLM</button>
+          </div>
+          <button class="btn btn-sm" id="copyBtn">Copy</button>
+          <button class="btn btn-sm" id="dlBtn">Download</button>
+          <button class="btn btn-sm" id="shareBtn">Share</button>
+        </div>
+      </div>
+
+      <div class="output-wrap">
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone-text">Drop GitHub URL here</div>
+        </div>
+
+        <div class="empty" id="emptyState">
+          <div class="empty-ascii" id="emptyAscii"></div>
+          <div class="empty-title">Convert any GitHub repo to LLM context</div>
+          <div class="empty-desc">
+            Smart filtering, token estimation, and optimized formats for Claude, GPT, Gemini, and all major LLMs.
+          </div>
+          <div class="empty-shortcuts">
+            <span class="empty-shortcut"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Convert</span>
+            <span class="empty-shortcut"><kbd>Ctrl</kbd>+<kbd>C</kbd> Copy output</span>
+            <span class="empty-shortcut"><kbd>Ctrl</kbd>+<kbd>S</kbd> Save file</span>
+          </div>
+        </div>
+
+        <div class="output-scroll" id="outputScroll">
+          <pre class="output-pre" id="outputPre"></pre>
+        </div>
+
+        <div class="analysis" id="analysisPanel">
+          <div class="analysis-tabs">
+            <button class="analysis-tab active" data-tab="overview">Overview</button>
+            <button class="analysis-tab" data-tab="models">Models</button>
+            <button class="analysis-tab" data-tab="files">Files</button>
+            <button class="analysis-tab" data-tab="languages">Languages</button>
+          </div>
+
+          <div class="analysis-content visible" id="tabOverview">
+            <div class="analysis-grid">
+              <div class="analysis-card">
+                <div class="analysis-label">Total Tokens</div>
+                <div class="analysis-value" id="aTokens">0</div>
+              </div>
+              <div class="analysis-card">
+                <div class="analysis-label">Files</div>
+                <div class="analysis-value" id="aFiles">0</div>
+              </div>
+              <div class="analysis-card">
+                <div class="analysis-label">Size</div>
+                <div class="analysis-value" id="aSize">0 KB</div>
+              </div>
+              <div class="analysis-card">
+                <div class="analysis-label">Lines</div>
+                <div class="analysis-value" id="aLines">0</div>
+              </div>
+              <div class="analysis-card">
+                <div class="analysis-label">Avg File</div>
+                <div class="analysis-value" id="aAvgFile">0</div>
+              </div>
+              <div class="analysis-card">
+                <div class="analysis-label">Compression</div>
+                <div class="analysis-value" id="aCompression">-</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="analysis-content" id="tabModels">
+            <div class="models-title">LLM Context Window Compatibility (December 2025)</div>
+            <div class="models-grid" id="modelsGrid"></div>
+          </div>
+
+          <div class="analysis-content" id="tabFiles">
+            <div class="file-tree-actions">
+              <button class="btn btn-sm" id="selectAllFiles">Select All</button>
+              <button class="btn btn-sm" id="deselectAllFiles">Deselect All</button>
+              <button class="btn btn-sm" id="invertSelection">Invert</button>
+              <span style="flex:1"></span>
+              <span style="font-size:10px;color:var(--fg-3)" id="selectedCount">0 selected</span>
+            </div>
+            <div class="file-tree" id="fileTree"></div>
+          </div>
+
+          <div class="analysis-content" id="tabLanguages">
+            <div class="code-stats" id="langStats"></div>
+          </div>
+        </div>
+
+        <div class="loading" id="loadingOverlay">
+          <div class="loading-ascii" id="loadingAscii"></div>
+          <div class="loading-text" id="loadingText">Initializing...</div>
+          <div class="loading-status" id="loadingStatus"></div>
+          <div class="loading-progress">
+            <div class="loading-progress-bar" id="loadingProgressBar"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal">
+      <div class="modal-title">Share Configuration</div>
+      <p style="font-size:12px;color:var(--fg-2);margin-bottom:12px;">
+        Copy this URL to share your current repo configuration with others.
+      </p>
+      <div class="modal-row">
+        <input type="text" id="shareUrl" class="input" readonly>
+        <button class="btn" id="copyShareUrl">Copy</button>
+      </div>
+      <button class="btn modal-close" id="closeShareModal">Close</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="kbd-hint">
+    <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Convert</span>
+    <span><kbd>Ctrl</kbd>+<kbd>C</kbd> Copy</span>
+  </div>
+
+  <script>
+    (() => {
+      // ============================================================
+      // ASCII ART
+      // ============================================================
+      
+      const IDLE_ASCII = `
+    +-------------------------------------------+
+    |                                           |
+    |   repo2prompt v5                          |
+    |                                           |
+    |   github.com/owner/repo                   |
+    |              |                            |
+    |              v                            |
+    |                                           |
+    |   <repository name="repo">                |
+    |     <file path="src/index.ts">            |
+    |       export const app = ...              |
+    |     </file>                               |
+    |     <file path="package.json">            |
+    |       { "name": "repo" }                  |
+    |     </file>                               |
+    |   </repository>                           |
+    |                                           |
+    +-------------------------------------------+
+`;
+
+      const LOADING_FRAMES = [
+        `
+    +-------------------------------------------+
+    |                                           |
+    |   [*         ]  Connecting to GitHub...   |
+    |                                           |
+    |   Progress: [##--------] 10%              |
+    |                                           |
+    +-------------------------------------------+
+`,
+        `
+    +-------------------------------------------+
+    |                                           |
+    |   [ *        ]  Detecting branch...       |
+    |                                           |
+    |   Progress: [###-------] 20%              |
+    |                                           |
+    +-------------------------------------------+
+`,
+        `
+    +-------------------------------------------+
+    |                                           |
+    |   [  *       ]  Fetching file tree...     |
+    |                                           |
+    |   Progress: [#####-----] 40%              |
+    |                                           |
+    +-------------------------------------------+
+`,
+        `
+    +-------------------------------------------+
+    |                                           |
+    |   [   *      ]  Downloading files...      |
+    |                                           |
+    |   Progress: [#######---] 60%              |
+    |                                           |
+    +-------------------------------------------+
+`,
+        `
+    +-------------------------------------------+
+    |                                           |
+    |   [    *     ]  Processing content...     |
+    |                                           |
+    |   Progress: [########--] 80%              |
+    |                                           |
+    +-------------------------------------------+
+`,
+        `
+    +-------------------------------------------+
+    |                                           |
+    |   [     *    ]  Analyzing code...         |
+    |                                           |
+    |   Progress: [#########-] 90%              |
+    |                                           |
+    +-------------------------------------------+
+`,
+        `
+    +-------------------------------------------+
+    |                                           |
+    |   [      *   ]  Generating output...      |
+    |                                           |
+    |   Progress: [##########] 95%              |
+    |                                           |
+    +-------------------------------------------+
+`
+      ];
+
+      // ============================================================
+      // STATE
+      // ============================================================
+      
+      let repoData = null;
+      let currentFmt = 'xml';
+      let cache = {};
+      let animInterval = null;
+      let animFrame = 0;
+      let history = JSON.parse(localStorage.getItem('repo2prompt_history') || '[]');
+      let selectedFiles = new Set();
+      let gitignorePatterns = [];
+
+      const $ = id => document.getElementById(id);
+      
+      // ============================================================
+      // MODELS (Dec 2025 - verified)
+      // ============================================================
+      
+      const MODELS = [
+        { name: 'Gemini 2.5 Pro', tokens: 1000000, type: 'flagship' },
+        { name: 'Claude Sonnet 4.5 (1M)', tokens: 1000000, type: 'flagship' },
+        { name: 'Llama 4 Maverick', tokens: 1000000, type: 'open' },
+        { name: 'GPT-5', tokens: 400000, type: 'flagship' },
+        { name: 'Qwen3-Max', tokens: 256000, type: 'open' },
+        { name: 'Claude Opus 4.5', tokens: 200000, type: 'flagship' },
+        { name: 'Claude Sonnet 4.5', tokens: 200000, type: 'flagship' },
+        { name: 'DeepSeek V3', tokens: 128000, type: 'open' },
+        { name: 'GPT-4o', tokens: 128000, type: 'flagship' },
+        { name: 'Mistral Large 2', tokens: 128000, type: 'open' },
+        { name: 'Gemini 2.0 Flash', tokens: 100000, type: 'fast' },
+        { name: 'Claude Haiku 4.5', tokens: 200000, type: 'fast' }
+      ];
+
+      // Language extensions for stats
+      const LANG_MAP = {
+        js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript', cjs: 'JavaScript',
+        ts: 'TypeScript', tsx: 'TypeScript', mts: 'TypeScript',
+        py: 'Python', pyw: 'Python', pyi: 'Python',
+        rb: 'Ruby', rs: 'Rust', go: 'Go', java: 'Java',
+        c: 'C', h: 'C', cpp: 'C++', hpp: 'C++', cc: 'C++',
+        cs: 'C#', swift: 'Swift', kt: 'Kotlin', scala: 'Scala',
+        php: 'PHP', vue: 'Vue', svelte: 'Svelte',
+        html: 'HTML', htm: 'HTML', css: 'CSS', scss: 'SCSS', sass: 'Sass', less: 'Less',
+        json: 'JSON', yaml: 'YAML', yml: 'YAML', toml: 'TOML', xml: 'XML',
+        md: 'Markdown', mdx: 'MDX', txt: 'Text',
+        sh: 'Shell', bash: 'Shell', zsh: 'Shell', fish: 'Shell',
+        sql: 'SQL', graphql: 'GraphQL', prisma: 'Prisma',
+        dockerfile: 'Docker', makefile: 'Makefile'
+      };
+
+      // Important file patterns for prioritization
+      const IMPORTANT_FILES = [
+        /^readme/i, /^package\.json$/, /^tsconfig\.json$/, /^cargo\.toml$/,
+        /^go\.mod$/, /^requirements\.txt$/, /^setup\.py$/, /^pyproject\.toml$/,
+        /^index\.(ts|js|tsx|jsx)$/, /^main\.(ts|js|py|rs|go)$/,
+        /^app\.(ts|js|tsx|jsx|py)$/, /^lib\.(rs)$/,
+        /^src\/index/, /^src\/main/, /^src\/app/, /^src\/lib/
+      ];
+
+      // ============================================================
+      // UI HELPERS
+      // ============================================================
+      
+      function showError(msg) {
+        $('errorBox').textContent = msg;
+        $('errorBox').classList.add('visible');
+      }
+
+      function hideError() {
+        $('errorBox').classList.remove('visible');
+      }
+
+      function showToast(msg) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.classList.add('visible');
+        setTimeout(() => t.classList.remove('visible'), 2500);
+      }
+
+      function startLoadingAnim() {
+        animFrame = 0;
+        $('loadingAscii').textContent = LOADING_FRAMES[0];
+        animInterval = setInterval(() => {
+          animFrame = (animFrame + 1) % LOADING_FRAMES.length;
+          $('loadingAscii').textContent = LOADING_FRAMES[animFrame];
+        }, 350);
+      }
+
+      function stopLoadingAnim() {
+        if (animInterval) {
+          clearInterval(animInterval);
+          animInterval = null;
+        }
+      }
+
+      function setLoading(on, text = '', status = '') {
+        if (on) {
+          $('loadingOverlay').classList.add('visible');
+          $('loadingText').textContent = text;
+          $('loadingStatus').textContent = status;
+          $('loadingProgressBar').style.width = '0%';
+          startLoadingAnim();
+        } else {
+          $('loadingOverlay').classList.remove('visible');
+          stopLoadingAnim();
+        }
+      }
+
+      function updateLoading(text, status, progress = 0) {
+        $('loadingText').textContent = text;
+        $('loadingStatus').textContent = status;
+        $('loadingProgressBar').style.width = progress + '%';
+      }
+
+      // Show idle ASCII
+      $('emptyAscii').textContent = IDLE_ASCII;
+
+      // Accordions
+      document.querySelectorAll('.accordion-head').forEach(h => {
+        h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
+      });
+
+      // Format tabs
+      document.querySelectorAll('.tab').forEach(t => {
+        t.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+          t.classList.add('active');
+          currentFmt = t.dataset.fmt;
+          if (repoData) renderOutput();
+        });
+      });
+
+      // Analysis tabs
+      document.querySelectorAll('.analysis-tab').forEach(t => {
+        t.addEventListener('click', () => {
+          document.querySelectorAll('.analysis-tab').forEach(x => x.classList.remove('active'));
+          document.querySelectorAll('.analysis-content').forEach(x => x.classList.remove('visible'));
+          t.classList.add('active');
+          $('tab' + t.dataset.tab.charAt(0).toUpperCase() + t.dataset.tab.slice(1)).classList.add('visible');
+        });
+      });
+
+      // ============================================================
+      // HISTORY
+      // ============================================================
+      
+      function updateHistoryUI() {
+        $('historyCount').textContent = `(${history.length})`;
+        const menu = $('historyMenu');
+        
+        if (history.length === 0) {
+          menu.innerHTML = '<div class="history-empty">No recent repos</div>';
+          return;
+        }
+
+        menu.innerHTML = history.slice(0, 10).map((h, i) => `
+          <div class="history-item" data-index="${i}">
+            <span class="history-item-name">${h.owner}/${h.repo}</span>
+            <span class="history-item-time">${formatTimeAgo(h.timestamp)}</span>
+          </div>
+        `).join('');
+
+        menu.querySelectorAll('.history-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const idx = parseInt(item.dataset.index);
+            const h = history[idx];
+            $('repoInput').value = `${h.owner}/${h.repo}`;
+            if (h.branch) $('branchInput').value = h.branch;
+            menu.classList.remove('visible');
+          });
+        });
+      }
+
+      function addToHistory(owner, repo, branch) {
+        const existing = history.findIndex(h => h.owner === owner && h.repo === repo);
+        if (existing >= 0) history.splice(existing, 1);
+        
+        history.unshift({ owner, repo, branch, timestamp: Date.now() });
+        history = history.slice(0, 20);
+        localStorage.setItem('repo2prompt_history', JSON.stringify(history));
+        updateHistoryUI();
+      }
+
+      function formatTimeAgo(ts) {
+        const diff = Date.now() - ts;
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return `${mins}m ago`;
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
+      }
+
+      $('historyBtn').addEventListener('click', () => {
+        $('historyMenu').classList.toggle('visible');
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('.history-wrap')) {
+          $('historyMenu').classList.remove('visible');
+        }
+      });
+
+      updateHistoryUI();
+
+      // ============================================================
+      // PRESETS
+      // ============================================================
+      
+      $('presets').querySelectorAll('.preset').forEach(p => {
+        p.addEventListener('click', () => {
+          $('repoInput').value = p.dataset.repo;
+          $('repoInput').focus();
+        });
+      });
+
+      // ============================================================
+      // DRAG & DROP
+      // ============================================================
+      
+      const dropZone = $('dropZone');
+
+      document.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('visible');
+      });
+
+      document.addEventListener('dragleave', e => {
+        if (!e.relatedTarget || !document.contains(e.relatedTarget)) {
+          dropZone.classList.remove('visible');
+        }
+      });
+
+      document.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('visible');
+        
+        const text = e.dataTransfer.getData('text/plain');
+        if (text && text.includes('github.com')) {
+          $('repoInput').value = text;
+          $('convertBtn').click();
+        }
+      });
+
+      // ============================================================
+      // KEYBOARD SHORTCUTS
+      // ============================================================
+      
+      document.addEventListener('keydown', e => {
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            $('convertBtn').click();
+          } else if (e.key === 'c' && repoData && !window.getSelection().toString()) {
+            e.preventDefault();
+            $('copyBtn').click();
+          } else if (e.key === 's' && repoData) {
+            e.preventDefault();
+            $('dlBtn').click();
+          }
+        }
+      });
+
+      // ============================================================
+      // URL SHARING
+      // ============================================================
+      
+      function loadFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('repo')) {
+          $('repoInput').value = params.get('repo');
+          if (params.has('branch')) $('branchInput').value = params.get('branch');
+          if (params.has('path')) $('pathInput').value = params.get('path');
+          if (params.has('fmt')) {
+            currentFmt = params.get('fmt');
+            document.querySelectorAll('.tab').forEach(t => {
+              t.classList.toggle('active', t.dataset.fmt === currentFmt);
+            });
+          }
+        }
+      }
+
+      loadFromURL();
+
+      $('shareBtn').addEventListener('click', () => {
+        if (!repoData) return;
+        
+        const params = new URLSearchParams();
+        params.set('repo', `${repoData.owner}/${repoData.repo}`);
+        if (repoData.branch !== 'main') params.set('branch', repoData.branch);
+        if ($('pathInput').value) params.set('path', $('pathInput').value);
+        params.set('fmt', currentFmt);
+
+        const url = window.location.origin + window.location.pathname + '?' + params.toString();
+        $('shareUrl').value = url;
+        $('shareModal').classList.add('visible');
+      });
+
+      $('copyShareUrl').addEventListener('click', async () => {
+        await navigator.clipboard.writeText($('shareUrl').value);
+        showToast('URL copied');
+      });
+
+      $('closeShareModal').addEventListener('click', () => {
+        $('shareModal').classList.remove('visible');
+      });
+
+      $('shareModal').addEventListener('click', e => {
+        if (e.target === $('shareModal')) $('shareModal').classList.remove('visible');
+      });
+
+      // ============================================================
+      // PARSING & FILTERING
+      // ============================================================
+      
+      function parseRepo(input) {
+        input = input.trim().replace(/\/$/, '');
+        if (!input) return null;
+        
+        // Full URL
+        let m = input.match(/github\.com\/([^\/]+)\/([^\/\s#?]+)/);
+        if (m) return { owner: m[1], repo: m[2].replace(/\.git$/, '') };
+        
+        // Short format
+        m = input.match(/^([^\/\s]+)\/([^\/\s]+)$/);
+        if (m) return { owner: m[1], repo: m[2] };
+        
+        return null;
+      }
+
+      function parseGitignore(content) {
+        const patterns = [];
+        content.split('\n').forEach(line => {
+          line = line.trim();
+          if (!line || line.startsWith('#')) return;
+          
+          // Convert gitignore pattern to regex
+          let pattern = line
+            .replace(/\./g, '\\.')
+            .replace(/\*\*/g, '.*')
+            .replace(/\*/g, '[^/]*')
+            .replace(/\?/g, '.');
+          
+          if (line.startsWith('/')) {
+            pattern = '^' + pattern.slice(1);
+          } else if (!line.includes('/')) {
+            pattern = '(^|/)' + pattern;
+          }
+          
+          if (line.endsWith('/')) {
+            pattern = pattern.slice(0, -2) + '(/|$)';
+          }
+          
+          try {
+            patterns.push(new RegExp(pattern));
+          } catch {}
+        });
+        return patterns;
+      }
+
+      function getFilters() {
+        const f = [];
+        
+        if ($('fDeps').checked) {
+          f.push(/node_modules/, /vendor\//, /\.venv/, /__pycache__/, /bower_components/, /\.bundle\//);
+        }
+        if ($('fLock').checked) {
+          f.push(/package-lock\.json$/, /yarn\.lock$/, /pnpm-lock\.yaml$/, /composer\.lock$/, 
+                 /Gemfile\.lock$/, /Cargo\.lock$/, /poetry\.lock$/, /bun\.lockb$/);
+        }
+        if ($('fBuild').checked) {
+          f.push(/^dist\//, /^build\//, /^\.next\//, /^out\//, /^target\//, /\.min\.(js|css)$/,
+                 /^\.nuxt\//, /^\.output\//, /^\.vercel\//, /^\.svelte-kit\//, /^coverage\//);
+        }
+        if ($('fBinary').checked) {
+          f.push(
+            /\.(png|jpg|jpeg|gif|ico|svg|webp|bmp|tiff|avif)$/i,
+            /\.(mp4|mp3|wav|ogg|webm|mov|avi|flac|m4a)$/i,
+            /\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i,
+            /\.(zip|tar|gz|rar|7z|bz2|xz)$/i,
+            /\.(woff|woff2|ttf|eot|otf)$/i,
+            /\.(exe|dll|so|dylib|bin|o|a)$/i,
+            /\.(db|sqlite|sqlite3)$/i,
+            /\.(pyc|pyo|class|jar|war)$/i
+          );
+        }
+        if ($('fTests').checked) {
+          f.push(/\.test\.(js|ts|jsx|tsx)$/, /\.spec\.(js|ts|jsx|tsx)$/, 
+                 /__tests__\//, /\/tests?\//, /\.test\.py$/, /_test\.go$/, /_test\.rs$/);
+        }
+        if ($('fDocs').checked) {
+          f.push(/\.md$/i, /^docs\//, /^documentation\//, /^wiki\//);
+        }
+
+        // Custom exclude
+        const customEx = $('customExclude').value.trim();
+        if (customEx) {
+          customEx.split(',').forEach(p => {
+            p = p.trim();
+            if (p) {
+              try {
+                const rx = p.replace(/\./g, '\\.').replace(/\*/g, '.*');
+                f.push(new RegExp(rx, 'i'));
+              } catch {}
+            }
+          });
+        }
+
+        // Always exclude
+        f.push(/^\.git\//, /\.DS_Store$/, /Thumbs\.db$/);
+        
+        return f;
+      }
+
+      function getIncludePatterns() {
+        const customInc = $('customInclude').value.trim();
+        if (!customInc) return null;
+        
+        const patterns = [];
+        customInc.split(',').forEach(p => {
+          p = p.trim();
+          if (p) {
+            try {
+              const rx = p.replace(/\./g, '\\.').replace(/\*/g, '.*');
+              patterns.push(new RegExp(rx, 'i'));
+            } catch {}
+          }
+        });
+        return patterns.length > 0 ? patterns : null;
+      }
+
+      function shouldInclude(path, excludeFilters, includePatterns) {
+        // Check gitignore
+        if ($('fGitignore').checked && gitignorePatterns.length > 0) {
+          if (gitignorePatterns.some(rx => rx.test(path))) return false;
+        }
+        
+        // Check exclude filters
+        if (excludeFilters.some(rx => rx.test(path))) return false;
+        
+        // Check include patterns (whitelist)
+        if (includePatterns) {
+          return includePatterns.some(rx => rx.test(path));
+        }
+        
+        return true;
+      }
+
+      function isImportantFile(path) {
+        return IMPORTANT_FILES.some(rx => rx.test(path));
+      }
+
+      function estTokens(text) {
+        // More accurate estimation
+        return Math.ceil(text.length / 3.5);
+      }
+
+      // ============================================================
+      // GITHUB FETCHING
+      // ============================================================
+      
+      async function fetchRawFile(owner, repo, branch, path) {
+        const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return null;
+          return await res.text();
+        } catch {
+          return null;
+        }
+      }
+
+      async function detectBranch(owner, repo) {
+        for (const branch of ['main', 'master', 'develop', 'dev']) {
+          try {
+            const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/README.md`;
+            const res = await fetch(url, { method: 'HEAD' });
+            if (res.ok) return branch;
+          } catch {}
+        }
+        return 'main';
+      }
+
+      async function getFileListFromTreeAPI(owner, repo, branch) {
+        try {
+          const url = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
+          const res = await fetch(url);
+          if (!res.ok) return null;
+          
+          const data = await res.json();
+          return data.tree
+            .filter(item => item.type === 'blob')
+            .map(item => ({ path: item.path, size: item.size || 0 }));
+        } catch {
+          return null;
+        }
+      }
+
+      async function getDefaultFiles(owner, repo, branch) {
+        const commonFiles = [
+          'README.md', 'readme.md', 'package.json', 'tsconfig.json',
+          'src/index.ts', 'src/index.js', 'src/main.ts', 'src/main.js',
+          'src/App.tsx', 'src/App.jsx', 'src/app.tsx', 'src/app.ts',
+          'index.html', 'index.ts', 'index.js',
+          'app.py', 'main.py', 'setup.py', 'requirements.txt', 'pyproject.toml',
+          'Cargo.toml', 'src/main.rs', 'src/lib.rs',
+          'go.mod', 'main.go', 'cmd/main.go',
+          'Makefile', 'Dockerfile', 'docker-compose.yml',
+          '.env.example', 'config.json', 'config.yaml'
+        ];
+        
+        const existing = [];
+        for (const file of commonFiles) {
+          try {
+            const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file}`;
+            const res = await fetch(url, { method: 'HEAD' });
+            if (res.ok) existing.push({ path: file, size: 0 });
+          } catch {}
+        }
+        return existing;
+      }
+
+      // ============================================================
+      // MAIN FETCH
+      // ============================================================
+      
+      async function fetchRepo(parsed, branchOverride, subpath) {
+        const { owner, repo } = parsed;
+        
+        updateLoading('Detecting branch...', '', 5);
+        const branch = branchOverride || await detectBranch(owner, repo);
+        
+        // Try to fetch .gitignore
+        if ($('fGitignore').checked) {
+          updateLoading('Parsing .gitignore...', '', 10);
+          const gitignoreContent = await fetchRawFile(owner, repo, branch, '.gitignore');
+          gitignorePatterns = gitignoreContent ? parseGitignore(gitignoreContent) : [];
+        }
+        
+        updateLoading('Fetching file tree...', 'This may take a moment', 15);
+        
+        let files = await getFileListFromTreeAPI(owner, repo, branch);
+        
+        if (!files || files.length === 0) {
+          updateLoading('Using fallback method...', '', 20);
+          files = await getDefaultFiles(owner, repo, branch);
+        }
+        
+        if (!files || files.length === 0) {
+          throw new Error('Could not get file list. Repo may be private or not exist.');
+        }
+
+        // Apply subpath filter
+        if (subpath) {
+          const prefix = subpath.startsWith('/') ? subpath.slice(1) : subpath;
+          files = files.filter(f => f.path.startsWith(prefix));
+        }
+
+        // Apply filters
+        const excludeFilters = getFilters();
+        const includePatterns = getIncludePatterns();
+        const maxKB = parseInt($('maxKB').value) * 1024 || 100000;
+        
+        let eligible = files.filter(f => shouldInclude(f.path, excludeFilters, includePatterns));
+        
+        if (eligible.length === 0) {
+          throw new Error('No files remain after filtering');
+        }
+
+        // Prioritize important files
+        if ($('optPrioritize').checked) {
+          eligible.sort((a, b) => {
+            const aImp = isImportantFile(a.path) ? 0 : 1;
+            const bImp = isImportantFile(b.path) ? 0 : 1;
+            return aImp - bImp;
+          });
+        }
+
+        // Limit files
+        const maxFiles = parseInt($('maxFiles').value) || 200;
+        const toFetch = eligible.slice(0, maxFiles);
+        
+        updateLoading('Downloading files...', `0/${toFetch.length}`, 25);
+
+        // Fetch with batching
+        const results = [];
+        const batchSize = 15;
+        
+        for (let i = 0; i < toFetch.length; i += batchSize) {
+          const batch = toFetch.slice(i, i + batchSize);
+          
+          const batchResults = await Promise.all(
+            batch.map(async f => {
+              const content = await fetchRawFile(owner, repo, branch, f.path);
+              if (content && content.length <= maxKB) {
+                // Binary check
+                if (!/[\x00-\x08\x0E-\x1F]/.test(content.slice(0, 1000))) {
+                  return { path: f.path, content, size: content.length };
+                }
+              }
+              return null;
+            })
+          );
+          
+          results.push(...batchResults.filter(Boolean));
+          
+          const progress = 25 + Math.floor((i / toFetch.length) * 65);
+          updateLoading('Downloading files...', `${Math.min(i + batchSize, toFetch.length)}/${toFetch.length}`, progress);
+          
+          if (i + batchSize < toFetch.length) {
+            await new Promise(r => setTimeout(r, 30));
+          }
+        }
+
+        if (results.length === 0) {
+          throw new Error('No readable files found');
+        }
+
+        // Target token limit
+        const targetTokens = parseInt($('targetTokens').value) || 0;
+        if (targetTokens > 0) {
+          let totalTokens = 0;
+          const limited = [];
+          for (const f of results) {
+            const tokens = estTokens(f.content);
+            if (totalTokens + tokens <= targetTokens) {
+              limited.push(f);
+              totalTokens += tokens;
+            } else {
+              break;
+            }
+          }
+          return { owner, repo, branch, files: limited, totalFiles: files.length };
+        }
+
+        return { owner, repo, branch, files: results, totalFiles: files.length };
+      }
+
+      // ============================================================
+      // OUTPUT FORMATTING
+      // ============================================================
+      
+      function addLineNumbers(content) {
+        const lines = content.split('\n');
+        const pad = lines.length.toString().length;
+        return lines.map((l, i) => `${(i + 1).toString().padStart(pad)} | ${l}`).join('\n');
+      }
+
+      function formatOutput(data, fmt) {
+        const showTree = $('optTree').checked;
+        const showStats = $('optStats').checked;
+        const compress = $('optCompress').checked;
+        const lineNums = $('optLineNums').checked;
+        const chunked = $('optChunked').checked;
+
+        let files = selectedFiles.size > 0 
+          ? data.files.filter(f => selectedFiles.has(f.path))
+          : data.files;
+
+        if (compress) {
+          files = files.map(f => ({
+            ...f,
+            content: f.content.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+$/gm, '').trim()
+          }));
+        }
+
+        if (lineNums) {
+          files = files.map(f => ({
+            ...f,
+            content: addLineNumbers(f.content)
+          }));
+        }
+
+        const treeStr = files.map(f => f.path).sort().join('\n');
+        const chars = files.reduce((s, f) => s + f.content.length, 0);
+        const tokens = estTokens(files.map(f => f.content).join(''));
+        const lines = files.reduce((s, f) => s + f.content.split('\n').length, 0);
+
+        if (fmt === 'xml') {
+          let o = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+          o += `<repository name="${data.repo}" owner="${data.owner}" branch="${data.branch}">\n`;
+          if (showStats) {
+            o += `  <meta>\n`;
+            o += `    <files>${files.length}</files>\n`;
+            o += `    <chars>${chars}</chars>\n`;
+            o += `    <lines>${lines}</lines>\n`;
+            o += `    <tokens>${tokens}</tokens>\n`;
+            o += `  </meta>\n`;
+          }
+          if (showTree) {
+            o += `  <tree>\n${treeStr.split('\n').map(l => '    ' + l).join('\n')}\n  </tree>\n`;
+          }
+          o += `  <files>\n`;
+          files.forEach(f => {
+            o += `    <file path="${f.path}">\n<![CDATA[\n${f.content}\n]]>\n    </file>\n`;
+          });
+          o += `  </files>\n</repository>`;
+          return o;
+        }
+
+        if (fmt === 'json') {
+          return JSON.stringify({
+            repository: { owner: data.owner, name: data.repo, branch: data.branch },
+            meta: showStats ? { files: files.length, chars, lines, tokens } : undefined,
+            tree: showTree ? files.map(f => f.path).sort() : undefined,
+            files: files.map(f => ({ path: f.path, content: f.content }))
+          }, null, 2);
+        }
+
+        if (fmt === 'llm') {
+          let o = `I'm sharing a GitHub repository with you for analysis.\n\n`;
+          o += `Repository: ${data.owner}/${data.repo}\n`;
+          o += `Branch: ${data.branch}\n`;
+          if (showStats) o += `Stats: ${files.length} files, ${tokens.toLocaleString()} tokens\n`;
+          o += `\n---\n\n`;
+          
+          if (showTree) {
+            o += `FILE STRUCTURE:\n${treeStr}\n\n---\n\n`;
+          }
+          
+          o += `FILES:\n\n`;
+          files.forEach(f => {
+            const ext = f.path.split('.').pop() || '';
+            o += `=== ${f.path} ===\n\`\`\`${ext}\n${f.content}\n\`\`\`\n\n`;
+          });
+          return o;
+        }
+
+        // Markdown
+        let o = `# ${data.owner}/${data.repo}\n\n`;
+        o += `> Branch: \`${data.branch}\`\n`;
+        if (showStats) o += `> ${files.length} files | ${lines.toLocaleString()} lines | ~${tokens.toLocaleString()} tokens\n`;
+        o += `\n`;
+        if (showTree) o += `## File Structure\n\n\`\`\`\n${treeStr}\n\`\`\`\n\n`;
+        o += `## Files\n\n`;
+        files.forEach(f => {
+          const ext = f.path.split('.').pop() || '';
+          o += `### ${f.path}\n\n\`\`\`${ext}\n${f.content}\n\`\`\`\n\n`;
+        });
+        return o;
+      }
+
+      // ============================================================
+      // LANGUAGE STATS
+      // ============================================================
+      
+      function calculateLangStats(files) {
+        const stats = {};
+        files.forEach(f => {
+          const ext = f.path.split('.').pop()?.toLowerCase() || '';
+          const lang = LANG_MAP[ext] || 'Other';
+          if (!stats[lang]) stats[lang] = { count: 0, lines: 0, bytes: 0 };
+          stats[lang].count++;
+          stats[lang].lines += f.content.split('\n').length;
+          stats[lang].bytes += f.content.length;
+        });
+        return Object.entries(stats)
+          .sort((a, b) => b[1].lines - a[1].lines)
+          .slice(0, 12);
+      }
+
+      // ============================================================
+      // FILE TREE UI
+      // ============================================================
+      
+      function renderFileTree(files) {
+        selectedFiles = new Set(files.map(f => f.path));
+        
+        const tree = $('fileTree');
+        tree.innerHTML = files.map(f => `
+          <div class="file-tree-item" data-path="${f.path}">
+            <input type="checkbox" checked>
+            <span class="file-tree-name">${f.path}</span>
+            <span class="file-tree-size">${(f.size / 1024).toFixed(1)}KB</span>
+          </div>
+        `).join('');
+
+        tree.querySelectorAll('.file-tree-item').forEach(item => {
+          const checkbox = item.querySelector('input');
+          const path = item.dataset.path;
+          
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+              selectedFiles.add(path);
+            } else {
+              selectedFiles.delete(path);
+            }
+            updateSelectedCount();
+            renderOutput();
+          });
+        });
+
+        updateSelectedCount();
+      }
+
+      function updateSelectedCount() {
+        $('selectedCount').textContent = `${selectedFiles.size} selected`;
+      }
+
+      $('selectAllFiles').addEventListener('click', () => {
+        if (!repoData) return;
+        repoData.files.forEach(f => selectedFiles.add(f.path));
+        $('fileTree').querySelectorAll('input').forEach(cb => cb.checked = true);
+        updateSelectedCount();
+        renderOutput();
+      });
+
+      $('deselectAllFiles').addEventListener('click', () => {
+        selectedFiles.clear();
+        $('fileTree').querySelectorAll('input').forEach(cb => cb.checked = false);
+        updateSelectedCount();
+        renderOutput();
+      });
+
+      $('invertSelection').addEventListener('click', () => {
+        if (!repoData) return;
+        const newSelected = new Set();
+        repoData.files.forEach(f => {
+          if (!selectedFiles.has(f.path)) newSelected.add(f.path);
+        });
+        selectedFiles = newSelected;
+        $('fileTree').querySelectorAll('.file-tree-item').forEach(item => {
+          const checkbox = item.querySelector('input');
+          checkbox.checked = selectedFiles.has(item.dataset.path);
+        });
+        updateSelectedCount();
+        renderOutput();
+      });
+
+      // ============================================================
+      // RENDER
+      // ============================================================
+      
+      function renderOutput() {
+        if (!repoData) return;
+
+        const output = formatOutput(repoData, currentFmt);
+        $('outputPre').textContent = output;
+        cache[currentFmt] = output;
+
+        const tokens = estTokens(output);
+        const chars = output.length;
+        const files = selectedFiles.size > 0 
+          ? repoData.files.filter(f => selectedFiles.has(f.path))
+          : repoData.files;
+        const lines = files.reduce((s, f) => s + f.content.split('\n').length, 0);
+
+        $('repoName').textContent = `${repoData.owner}/${repoData.repo}`;
+        $('repoBranch').textContent = repoData.branch;
+        $('sFiles').textContent = files.length;
+        $('sChars').textContent = chars.toLocaleString();
+        $('sTokens').textContent = tokens.toLocaleString();
+
+        const tEl = $('sTokens');
+        tEl.classList.remove('warn', 'danger');
+        if (tokens > 500000) tEl.classList.add('danger');
+        else if (tokens > 200000) tEl.classList.add('warn');
+
+        // Overview
+        $('aTokens').textContent = tokens.toLocaleString();
+        $('aTokens').className = 'analysis-value ' + (tokens > 500000 ? 'bad' : tokens > 200000 ? 'warn' : 'ok');
+        $('aFiles').textContent = files.length;
+        $('aSize').textContent = (chars / 1024).toFixed(1) + ' KB';
+        $('aLines').textContent = lines.toLocaleString();
+        $('aAvgFile').textContent = Math.round(chars / files.length).toLocaleString() + ' chars';
+        
+        const originalChars = repoData.files.reduce((s, f) => s + f.content.length, 0);
+        const compressionRatio = chars < originalChars ? Math.round((1 - chars / originalChars) * 100) + '%' : '-';
+        $('aCompression').textContent = compressionRatio;
+
+        // Models grid
+        $('modelsGrid').innerHTML = MODELS.map(m => {
+          const ratio = tokens / m.tokens;
+          let tag, cls;
+          if (ratio <= 0.5) { tag = 'fits'; cls = 'ok'; }
+          else if (ratio <= 0.8) { tag = 'ok'; cls = 'ok'; }
+          else if (ratio <= 1) { tag = 'tight'; cls = 'warn'; }
+          else { tag = `${ratio.toFixed(1)}x over`; cls = 'bad'; }
+          
+          return `<div class="model-row">
+            <div>
+              <span class="model-name">${m.name}</span>
+              <span class="model-ctx">${(m.tokens / 1000).toFixed(0)}K</span>
+            </div>
+            <span class="model-tag ${cls}">${tag}</span>
+          </div>`;
+        }).join('');
+
+        // Language stats
+        const langStats = calculateLangStats(files);
+        const maxLines = Math.max(...langStats.map(([, s]) => s.lines));
+        $('langStats').innerHTML = langStats.map(([lang, s]) => `
+          <div class="code-stat">
+            <span class="code-stat-lang">${lang}</span>
+            <span class="code-stat-count">${s.count} files / ${s.lines.toLocaleString()} lines</span>
+          </div>
+        `).join('');
+
+        $('analysisPanel').classList.add('visible');
+      }
+
+      // ============================================================
+      // EVENTS
+      // ============================================================
+      
+      $('convertBtn').addEventListener('click', async () => {
+        hideError();
+        const parsed = parseRepo($('repoInput').value);
+        if (!parsed) return showError('Invalid repo. Use owner/repo or github.com URL');
+
+        const branch = $('branchInput').value.trim() || null;
+        const subpath = $('pathInput').value.trim() || null;
+        
+        setLoading(true, 'Starting...', '');
+        $('convertBtn').disabled = true;
+        cache = {};
+        selectedFiles.clear();
+
+        try {
+          repoData = await fetchRepo(parsed, branch, subpath);
+          
+          addToHistory(repoData.owner, repoData.repo, repoData.branch);
+          
+          $('emptyState').style.display = 'none';
+          $('outputScroll').classList.add('visible');
+          $('toolbar').classList.add('visible');
+
+          renderFileTree(repoData.files);
+          renderOutput();
+          
+          showToast(`Done: ${repoData.files.length} files loaded`);
+        } catch (e) {
+          showError(e.message);
+        } finally {
+          setLoading(false);
+          $('convertBtn').disabled = false;
+        }
+      });
+
+      $('copyBtn').addEventListener('click', async () => {
+        if (!repoData) return;
+        const output = cache[currentFmt] || formatOutput(repoData, currentFmt);
+        try {
+          await navigator.clipboard.writeText(output);
+          showToast('Copied to clipboard');
+        } catch {
+          showError('Copy failed');
+        }
+      });
+
+      $('dlBtn').addEventListener('click', () => {
+        if (!repoData) return;
+        const output = cache[currentFmt] || formatOutput(repoData, currentFmt);
+        const ext = { json: 'json', xml: 'xml', markdown: 'md', llm: 'txt' }[currentFmt];
+        const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${repoData.owner}-${repoData.repo}.${ext}`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('File downloaded');
+      });
+
+      $('repoInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') $('convertBtn').click();
+      });
+
+      // Auto-convert if URL has repo param
+      if (new URLSearchParams(window.location.search).has('repo')) {
+        setTimeout(() => $('convertBtn').click(), 100);
+      }
+    })();
+  </script>
+</body>
+</html>
