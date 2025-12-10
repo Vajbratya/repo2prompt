@@ -30,7 +30,6 @@ Paste a GitHub URL, get optimized output ready to paste into Claude, GPT, Gemini
 3. Click Convert
 4. Copy output to your LLM
 
-Or use the hosted version: [repo2prompt.vercel.app](https://repo2prompt.vercel.app)
 
 ## Filters
 
